@@ -1,80 +1,143 @@
-// --- UPDATED RACING LOGIC ---
-    updateRace: function() {
-        // 1. Handle Acceleration (Only move if ArrowUp is pressed)
-        if (this.keys['ArrowUp']) {
-            // Speed up based on level, but cap it at a max speed
-            let maxSpeed = 10 + (this.saveData.currentLevel * 2);
-            if (this.race.speed < maxSpeed) this.race.speed += 0.5;
-        } else {
-            // Friction: Slow down naturally if not pressing gas
-            this.race.speed *= 0.95; 
-            if (this.race.speed < 0.1) this.race.speed = 0;
-        }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Number Racer RPG</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { margin: 0; font-family: 'Arial', sans-serif; background: #222; color: white; overflow: hidden; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .menu { pointer-events: auto; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 10px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: none; }
+        #hud { position: absolute; top: 20px; left: 20px; font-size: 20px; }
+        #math-prompt { position: absolute; top: 20px; width: 100%; text-align: center; font-size: 40px; color: yellow; }
+        .btn { background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; font-size: 16px; border-radius: 5px; }
+        #world-map { display: block; } /* Start with the map */
+    </style>
+</head>
+<body>
 
-        // 2. Move the car forward
-        this.race.distance += Math.floor(this.race.speed);
-        this.race.roadOffset = (this.race.roadOffset + this.race.speed) % 100;
-        document.getElementById('race-dist').innerText = this.race.distance;
+    <div id="ui-layer">
+        <div id="world-map" class="menu">
+            <h1>Global Number Racer</h1>
+            <p>Select your destination:</p>
+            <button class="btn" onclick="startRace('New York', 0x333333)">USA (City)</button>
+            <button class="btn" onclick="startRace('Amazon', 0x228B22)">Brazil (Jungle)</button>
+            <button class="btn" onclick="openShop()">Visit RPG Shop</button>
+        </div>
 
-        // 3. Steering (Only works if moving)
-        if (this.race.speed > 1) {
-            if (this.keys['ArrowLeft']) this.race.playerX -= 8;
-            if (this.keys['ArrowRight']) this.race.playerX += 8;
-        }
+        <div id="shop" class="menu">
+            <h1 id="shop-title">Local Shop</h1>
+            <p>Your Points: <span id="shop-points">0</span></p>
+            <button class="btn" onclick="buyUpgrade('speed')">Better Engine (50 pts)</button>
+            <button class="btn" onclick="closeShop()">Back to Map</button>
+        </div>
 
-        // 4. Check for Finish Line (5000m)
-        if (this.race.distance > 5000) {
-            this.race.active = false;
-            // Instead of a pop-up immediately, we wait a split second
-            setTimeout(() => {
-                alert(`LEVEL ${this.saveData.currentLevel} COMPLETE!`);
-                this.saveData.currentLevel++;
-                this.saveData.platinum++;
-                this.save();
-                this.setState('OVERWORLD');
-            }, 100);
-        }
-    },
+        <div id="hud">Points: <span id="points">0</span> | Speed: <span id="speed-stat">0</span></div>
+        <div id="math-prompt"></div>
+    </div>
 
-    draw: function() {
-        this.ctx.clearRect(0,0,800,600);
-        
-        if (this.state === 'OVERWORLD') {
-            this.zones.forEach(z => {
-                this.ctx.fillStyle = z.color;
-                this.ctx.fillRect(z.x, z.y, z.w, z.h);
-                this.ctx.fillStyle = "#fff";
-                this.ctx.font = "16px Arial";
-                this.ctx.fillText(z.label, z.x + 20, z.y + 60);
-            });
-            this.ctx.fillStyle = this.player.color;
-            this.ctx.beginPath(); 
-            this.ctx.arc(this.player.x, this.player.y, 15, 0, 7); 
-            this.ctx.fill();
-        } 
-        else if (this.state === 'RACING') {
-            // Sky
-            this.ctx.fillStyle = "#000033"; 
-            this.ctx.fillRect(0,0,800,300);
+    <script>
+        // --- GAME DATA (The RPG "Brain") ---
+        let gameData = {
+            points: 0,
+            speedMultiplier: 1,
+            currentLocation: "USA",
+            isRacing: false
+        };
+
+        // --- 3D ENGINE SETUP ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Create a 3D Car
+        const carGroup = new THREE.Group();
+        const body = new THREE.Mesh(new THREE.BoxGeometry(1, 0.5, 2), new THREE.MeshPhongMaterial({color: 0xff0000}));
+        carGroup.add(body);
+        scene.add(carGroup);
+
+        // Add Light
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(0, 5, 5);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        camera.position.z = 5;
+        camera.position.y = 2;
+        camera.lookAt(carGroup.position);
+
+        // --- GAME FUNCTIONS ---
+        function startRace(location, groundColor) {
+            gameData.currentLocation = location;
+            gameData.isRacing = true;
+            document.getElementById('world-map').style.display = 'none';
             
-            // Ground
-            this.ctx.fillStyle = "#111"; 
-            this.ctx.fillRect(0,300,800,300);
-
-            // Draw Pseudo-3D Road
-            for(let i=0; i<300; i+=20) {
-                let w = i * 3; 
-                let y = 600 - i;
-                // Alternating colors for movement feel
-                this.ctx.fillStyle = (Math.floor((i + this.race.roadOffset) / 50) % 2 == 0) ? "#333" : "#444";
-                this.ctx.fillRect(400 - w/2 + this.race.playerX, y, w, 20);
-            }
-
-            // Draw Car
-            this.ctx.fillStyle = "#ff0000";
-            this.ctx.fillRect(380, 500, 40, 20); // Car body
-            this.ctx.fillStyle = "#555";
-            this.ctx.fillRect(375, 510, 10, 15); // Tires
-            this.ctx.fillRect(415, 510, 10, 15);
+            // Change track color based on country
+            scene.background = new THREE.Color(groundColor);
+            generateMathProblem();
         }
-    },
+
+        function generateMathProblem() {
+            if(!gameData.isRacing) return;
+            const num1 = Math.floor(Math.random() * 10);
+            const num2 = Math.floor(Math.random() * 10);
+            const ans = num1 + num2;
+            document.getElementById('math-prompt').innerText = `${num1} + ${num2} = ?`;
+            
+            // In a real game, you'd type the answer. Here, we simulate a "speed boost"
+            setTimeout(() => {
+                gameData.points += 10;
+                updateUI();
+                generateMathProblem();
+            }, 3000);
+        }
+
+        function openShop() {
+            document.getElementById('world-map').style.display = 'none';
+            document.getElementById('shop').style.display = 'block';
+            document.getElementById('shop-points').innerText = gameData.points;
+        }
+
+        function closeShop() {
+            document.getElementById('shop').style.display = 'none';
+            document.getElementById('world-map').style.display = 'block';
+        }
+
+        function buyUpgrade(type) {
+            if (gameData.points >= 50) {
+                gameData.points -= 50;
+                gameData.speedMultiplier += 0.5;
+                alert("Upgraded! Your car is now faster.");
+                updateUI();
+                document.getElementById('shop-points').innerText = gameData.points;
+            } else {
+                alert("Not enough points! Win more races.");
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('points').innerText = gameData.points;
+            document.getElementById('speed-stat').innerText = (gameData.speedMultiplier * 10).toFixed(0);
+        }
+
+        // --- ANIMATION LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            if(gameData.isRacing) {
+                carGroup.rotation.y += 0.01 * gameData.speedMultiplier; // Spin faster as you level up!
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
