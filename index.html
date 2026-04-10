@@ -26,6 +26,7 @@
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
 
         /* 90s: Classic Scrolling Marquee Banner */
@@ -40,7 +41,6 @@
             text-transform: uppercase;
         }
 
-        /* 2010s: Clean, Centered Hero Section */
         header {
             padding: 60px 20px;
             text-align: center;
@@ -49,7 +49,7 @@
         header h1 {
             font-size: 3.5rem;
             color: var(--cyber-blue);
-            text-shadow: 4px 4px 0px #004400; /* 90s Blocky Shadow */
+            text-shadow: 4px 4px 0px #004400; 
             margin: 0;
         }
 
@@ -59,7 +59,6 @@
             margin-top: 10px;
         }
 
-        /* 2020s: Glassmorphism Container */
         .main-container {
             background: var(--glass);
             backdrop-filter: blur(15px);
@@ -73,23 +72,24 @@
             margin-bottom: 50px;
         }
 
-        /* 2010s: Flexbox Grid for Projects */
-            .project-grid {
-    display: flex;
-    gap: 50px; /* Extra gap so they have room to float */
-    justify-content: space-around;
-    flex-wrap: wrap;
-    margin-top: 40px;
-    padding: 20px;
-}
+        .project-grid {
             display: flex;
-            gap: 30px;
+            gap: 60px; 
             justify-content: center;
             flex-wrap: wrap;
             margin-top: 40px;
+            padding: 40px;
         }
 
-        /* 90s/2000s: The "Beveled" Windows Program Look */
+        /* --- FREE FLOAT ANIMATION --- */
+        @keyframes freeFloat {
+            0%   { transform: translate(0, 0); }
+            25%  { transform: translate(60px, -40px); } 
+            50%  { transform: translate(-70px, 30px); } 
+            75%  { transform: translate(50px, 60px); }  
+            100% { transform: translate(0, 0); }
+        }
+
         .retro-card {
             background: var(--win-gray);
             color: black;
@@ -100,7 +100,14 @@
             padding: 15px;
             width: 280px;
             box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+            animation: freeFloat 20s ease-in-out infinite;
+            position: relative;
         }
+
+        /* Timing to make them move independently */
+        .retro-card:nth-child(1) { animation-duration: 18s; animation-delay: 0s; }
+        .retro-card:nth-child(2) { animation-duration: 25s; animation-delay: -5s; }
+        .retro-card:nth-child(3) { animation-duration: 22s; animation-delay: -12s; }
 
         .card-header {
             background: linear-gradient(90deg, var(--win-blue), var(--cyber-blue));
@@ -113,7 +120,6 @@
             justify-content: space-between;
         }
 
-        /* 2020s: Modern Neon Button */
         .play-btn {
             display: block;
             margin-top: 20px;
@@ -136,7 +142,6 @@
             box-shadow: 0 0 25px white;
         }
 
-        /* 2000s: The Infamous Blinking Text */
         .blink {
             animation: blinker 1s linear infinite;
         }
@@ -152,38 +157,12 @@
             color: #666;
         }
     </style>
-    /* This makes the cards move in a gentle circle */
-@keyframes float {
-  0% { transform: translate(0, 0); }
-  25% { transform: translate(10px, -15px); }
-  50% { transform: translate(-10px, 10px); }
-  75% { transform: translate(15px, 5px); }
-  100% { transform: translate(0, 0); }
-}
-
-.retro-card {
-  /* ... keep your existing card styles ... */
-  animation: float 8s ease-in-out infinite;
-  position: relative;
-}
-
-/* This makes each card move at a slightly different time */
-.retro-card:nth-child(2) {
-  animation-delay: 2s;
-  animation-duration: 10s;
-}
-
-.retro-card:nth-child(3) {
-  animation-delay: 4s;
-  animation-duration: 12s;
-}
 </head>
 <body>
 
     <div class="top-banner">
         <marquee scrollamount="10">
             SYSTEM STATUS: FUNCTIONAL <span class="blink">>>></span> LOADING VOYAGE_LOGS.EXE <span class="blink">>>></span> UPDATES EVERY WEEK! <span class="blink">>>></span> DONATE TO HELP ME MAKE MORE GAMES <span class="blink">>>></span>
-        
         </marquee>
     </div>
 
@@ -199,13 +178,13 @@
         
         <div class="project-grid">
             <div class="retro-card">
-    <div class="card-header">
-        <span>System_Updates.log</span>
-        <span>[X]</span>
-    </div>
-    <p>Check out the latest changes, bug fixes, and new features added to the voyage.</p>
-    <a href="changelog.html" class="play-btn">VIEW LOGS</a>
-</div>
+                <div class="card-header">
+                    <span>System_Updates.log</span>
+                    <span>[X]</span>
+                </div>
+                <p>Check out the latest changes, bug fixes, and new features added to the voyage.</p>
+                <a href="changelog.html" class="play-btn">VIEW LOGS</a>
+            </div>
             
             <div class="retro-card">
                 <div class="card-header">
@@ -223,10 +202,7 @@
                 </div>
                 <p>An early-stage 2D quest engine. It's the beginning of something huge.</p>
                 <a href="velocityquest.html" class="play-btn">EXECUTE PLAY</a>
-                <div class="retro-card">
-
             </div>
-
         </div>
     </div>
 
