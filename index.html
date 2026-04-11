@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,6 +104,13 @@
             box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
             animation: freeFloat 20s ease-in-out infinite;
             position: relative;
+            z-index: 1; /* Normal layer */
+        }
+
+        /* FIX: Stops the card from moving when you try to click play */
+        .retro-card:hover {
+            animation-play-state: paused;
+            z-index: 100; /* Brings it to the very front */
         }
 
         /* Timing to make them move independently */
@@ -185,7 +193,7 @@
                     <span>[X]</span>
                 </div>
                 <h3 style="margin: 0 0 10px 0; font-size: 1rem;">How I Built This</h3>
-                <video width="100%" controls preload="metadata" style="border: 1px solid #444;">
+                <video width="100%" controls preload="metadata" style="border: 1px solid #444; background: black;">
                     <source src="yourvideo.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -229,4 +237,3 @@
 
 </body>
 </html>
-     
